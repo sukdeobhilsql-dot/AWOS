@@ -1,0 +1,64 @@
+name: Fix Project Structure
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Locate and flatten AWOS module
+        run: |
+          set -e
+          MANIFEST=$(find . -path ./.git -prune -o -name "AndroidManifest.xml" -print | head -n1)
+          if [ -z "$MANIFEST" ]; then
+            echo "AndroidManifest.xml not found anywhere in repo!"
+            exit 1
+          fi
+          echo "Found manifest at: $MANIFEST"
+
+          FOUND_APP_DIR=$(dirname "$MANIFEST")
+          FOUND_APP_DIR=$(dirname "$FOUND_APP_DIR")
+          FOUND_APP_DIR=$(dirname "$FOUND_APP_DIR")
+          echo "App module root: $FOUND_APP_DIR"
+
+          ABS_TARGET="$(pwd)/app"
+          ABS_FOUND="$(cd "$FOUND_APP_DIR" && pwd)"
+
+          if [ "$ABS_FOUND" != "$ABS_TARGET" ]; then
+            echo "Moving $ABS_FOUND -> $ABS_TARGET"
+            mkdir -p app
+            cp -rn "$ABS_FOUND"/. app/
+            PARENT_OF_APP=$(dirname "$ABS_FOUND")
+            [ -f "$PARENT_OF_APP/settings.gradle.kts" ] && cp -n "$PARENT_OF_APP/settings.gradle.kts" ./settings.gradle.kts
+            [ -f "$PARENT_OF_APP/build.gradle.kts" ] && cp -n "$PARENT_OF_APP/build.gradle.kts" ./build.gradle.kts
+            [ -f "$PARENT_OF_APP/gradle.properties" ] && cp -n "$PARENT_OF_APP/gradle.properties" ./gradle.properties
+            rm -rf "$PARENT_OF_APP"
+          else
+            echo "Already correct, nothing to move."
+          fi
+
+      - name: Ensure gradle.properties exists
+        run: |
+          if [ ! -f gradle.properties ]; then
+            cat > gradle.properties << 'EOF'
+          android.useAndroidX=true
+          android.enableJetifier=true
+          android.nonTransitiveRClass=true
+          kotlin.code.style=official
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          EOF
+          fi
+
+      - name: Commit fixed structure
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && echo "No changes" || git commit -m "Auto-fix: flatten AWOS project structure"
+          git push
