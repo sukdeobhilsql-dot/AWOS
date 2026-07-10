@@ -23,6 +23,8 @@ import com.awos.ui.theme.AwosText
 /**
  * The AWOS "home screen" - equivalent to a Windows Desktop.
  * Icon grid + Taskbar (bottom) + Start Menu overlay.
+ * Uses Adaptive grid + safeDrawing insets so it scales across
+ * phones, tablets, foldables, and Android TV.
  */
 @Composable
 fun DesktopScreen(navController: NavHostController) {
@@ -31,13 +33,14 @@ fun DesktopScreen(navController: NavHostController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
             .background(
                 Brush.verticalGradient(listOf(AwosDarkBg, androidx.compose.ui.graphics.Color(0xFF0F1115)))
             )
     ) {
-        // Desktop icon grid
+        // Desktop icon grid - adapts column count to screen width
         LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
+            columns = GridCells.Adaptive(minSize = 96.dp),
             contentPadding = PaddingValues(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
