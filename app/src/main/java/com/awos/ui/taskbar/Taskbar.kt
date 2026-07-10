@@ -23,6 +23,7 @@ import java.util.*
 
 /**
  * Bottom taskbar: Start button, running-app tray placeholder, clock/status.
+ * Padded for navigation bars / TV overscan so nothing clips at screen edges.
  */
 @Composable
 fun Taskbar(modifier: Modifier = Modifier, onStartClick: () -> Unit) {
@@ -39,6 +40,7 @@ fun Taskbar(modifier: Modifier = Modifier, onStartClick: () -> Unit) {
         modifier = modifier
             .fillMaxWidth()
             .background(AwosTaskbar)
+            .windowInsetsPadding(WindowInsets.navigationBars)
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
