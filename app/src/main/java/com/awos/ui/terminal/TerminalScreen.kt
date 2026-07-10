@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
@@ -21,7 +22,10 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TerminalScreen(onBack: () -> Unit) {
-    val engine = remember { TerminalEngine() }
+    val context = LocalContext.current
+    val engine = remember {
+        TerminalEngine(context.getExternalFilesDir(null) ?: context.filesDir)
+    }
     val history = remember { mutableStateListOf("AWOS Basic Terminal — type 'help' to get started") }
     var input by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
@@ -83,7 +87,11 @@ fun TerminalScreen(onBack: () -> Unit) {
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                     keyboardActions = KeyboardActions(onGo = {
                         submit(input, engine, history) { input = "" }
-                        scope.launch { listState.animateScrollToItem(history.size - 1) }
+                        // Guard against empty history (e.g. right after 'clear') to avoid
+                        // animateScrollToItem crashing on a negative index.
+                        if (history.isNotEmpty()) {
+                            scope.launch { listState.animateScrollToItem(history.size - 1) }
+                        }
                     })
                 )
             }
