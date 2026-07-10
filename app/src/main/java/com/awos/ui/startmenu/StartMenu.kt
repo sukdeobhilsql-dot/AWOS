@@ -19,7 +19,8 @@ import com.awos.ui.theme.AwosText
 
 /**
  * Start Menu: opens above the taskbar, lists all installed/available apps.
- * Tapping outside dismisses it (scrim).
+ * Tapping outside dismisses it (scrim). Grid adapts to screen width and
+ * the panel height is capped so it never overflows on large/TV screens.
  */
 @Composable
 fun StartMenu(
@@ -39,14 +40,15 @@ fun StartMenu(
                 .align(Alignment.BottomStart)
                 .padding(bottom = 64.dp, start = 12.dp, end = 12.dp)
                 .fillMaxWidth()
+                .widthIn(max = 480.dp)
                 .background(AwosSurface, RoundedCornerShape(12.dp))
                 .padding(16.dp)
         ) {
             Text("All Apps", color = AwosText, style = androidx.compose.material3.MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(12.dp))
             LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                modifier = Modifier.height(220.dp)
+                columns = GridCells.Adaptive(minSize = 96.dp),
+                modifier = Modifier.heightIn(max = 320.dp)
             ) {
                 items(apps) { app ->
                     Column(
