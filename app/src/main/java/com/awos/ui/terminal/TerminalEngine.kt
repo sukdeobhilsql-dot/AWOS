@@ -1,17 +1,20 @@
 package com.awos.ui.terminal
 
-import android.os.Environment
 import java.io.File
 
 /**
  * Phase 1 "Basic Terminal": a lightweight simulated shell that understands
  * a handful of navigation/utility commands directly against the filesystem.
  *
+ * Operates inside the app's own external-files sandbox (no runtime storage
+ * permission required, and read/write always works regardless of Android
+ * version's scoped-storage rules).
+ *
  * NOTE: This is NOT a real Linux shell. Phase 2 replaces/extends this with
  * an actual Termux + proot-distro (Ubuntu/Debian) bash session.
  */
-class TerminalEngine {
-    private var currentDir: File = Environment.getExternalStorageDirectory()
+class TerminalEngine(root: File) {
+    private var currentDir: File = root.apply { mkdirs() }
 
     fun prompt(): String = "awos:${currentDir.name.ifEmpty { "/" }} $ "
 
@@ -45,7 +48,7 @@ class TerminalEngine {
         if (target == null) return "cd: missing operand"
         val next = when (target) {
             ".." -> currentDir.parentFile ?: currentDir
-            "~" -> Environment.getExternalStorageDirectory()
+            "~" -> currentDir
             else -> File(currentDir, target)
         }
         return if (next.exists() && next.isDirectory) {
@@ -59,6 +62,6 @@ class TerminalEngine {
     private fun makeDirectory(name: String?): String {
         if (name == null) return "mkdir: missing operand"
         val newDir = File(currentDir, name)
-        return if (newDir.mkdirs()) "" else "mkdir: failed to create '$name'"
+        return if (newDir.exists() || newDir.mkdirs()) "" else "mkdir: failed to create '$name'"
     }
 }
