@@ -1,8 +1,8 @@
 package com.awos.ui.explorer
 
-import android.os.Environment
+import android.app.Application
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
 import java.io.File
 
 data class FileEntry(
@@ -13,13 +13,16 @@ data class FileEntry(
 )
 
 /**
- * Minimal file-browsing ViewModel for Phase 1.
- * Root defaults to external storage. Deeper Storage Access Framework /
- * scoped-storage handling comes in a later hardening pass.
+ * File-browsing ViewModel for Phase 1.
+ * Root is the app's own external-files sandbox (Android/data/com.awos/files) -
+ * no runtime storage permission required, works consistently across all
+ * Android versions. Visible to any file manager app under that path.
  */
-class FileExplorerViewModel : ViewModel() {
+class FileExplorerViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val rootPath: String = Environment.getExternalStorageDirectory().absolutePath
+    private val rootPath: String =
+        (application.getExternalFilesDir(null) ?: application.filesDir).apply { mkdirs() }.absolutePath
+
     val currentPath = mutableStateOf(rootPath)
     val entries = mutableStateOf<List<FileEntry>>(emptyList())
 
